@@ -38,6 +38,7 @@ rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
+rcl_node_options_t node_ops;
 rcl_timer_t timer;
 
 // micro-ROS Agent Connection States
@@ -79,18 +80,24 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 // Create ROS entities
 bool create_ros_entities()
 {
-  const char * node_name = "force_sensor_node";
+  const char * node_name = "winch0_force_sensor_node";
   const char * ns = "";
 
   allocator = rcl_get_default_allocator();
-  RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+//   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+RCCHECK(rcl_init_options_init(&init_options, allocator));
+RCCHECK(rcl_init_options_set_domain_id(&init_options, 107));  
+
+RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
+
   RCCHECK(rclc_node_init_default(&node, node_name, ns, &support));
 
   RCCHECK(rclc_publisher_init_default(
       &publisher,
       &node,
       ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
-      "force_sensor_data"));
+      "winch0/force_sensor_data"));
 
   const unsigned int timer_timeout = 500;
   RCCHECK(rclc_timer_init_default(
@@ -188,7 +195,7 @@ void loop()
                      MCP342x::resolution16, MCP342x::gain2,
                      1000000, val, status);
     
-    tension = mapfloat(constrain(val, 5813, 29390), 5813, 29390, 0.0, 100.0); // Map the value to a float range
+    tension = mapfloat(constrain(val, 5619, 24700), 5619, 24700, 0.0, 100.0); // Map the value to a float range
     
     delay(500);
 }
